@@ -1,7 +1,7 @@
 import axios from "axios";
 import { Department, Patient, Employee, Ward } from "../types";
 
-const API_BASE_URL = "http://localhost:3001/api";
+const API_BASE_URL = "http://localhost:3003/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -29,4 +29,33 @@ export const patientApi = {
   delete: (id: string) => api.delete(`/patients/${id}`),
 };
 
-// Add similar APIs for employees, wards, diseases, etc.
+// Employees
+export const employeeApi = {
+  getAll: () => api.get<Employee[]>("/employees"),
+  getById: (id: string) => api.get<Employee>(`/employees/${id}`),
+  create: (employee: Omit<Employee, "id">) =>
+    api.post<Employee>("/employees", employee),
+  update: (id: string, employee: Omit<Employee, "id">) =>
+    api.put<Employee>(`/employees/${id}`, employee),
+  delete: (id: string) => api.delete(`/employees/${id}`),
+};
+
+// Wards
+export const wardApi = {
+  getAll: () => api.get<Ward[]>("/wards"),
+  getById: (id: string) => api.get<Ward>(`/wards/${id}`),
+  create: (ward: Omit<Ward, "id">) => api.post<Ward>("/wards", ward),
+  update: (id: string, ward: Omit<Ward, "id">) =>
+    api.put<Ward>(`/wards/${id}`, ward),
+  delete: (id: string) => api.delete(`/wards/${id}`),
+};
+
+// Diseases
+export const diseaseApi = {
+  getAll: () => api.get<any[]>("/diseases"),
+  getById: (id: string) => api.get<any>(`/diseases/${id}`),
+  create: (disease: Omit<any, "id">) => api.post<any>("/diseases", disease),
+  update: (id: string, disease: Omit<any, "id">) =>
+    api.put<any>(`/diseases/${id}`, disease),
+  delete: (id: string) => api.delete(`/diseases/${id}`),
+};

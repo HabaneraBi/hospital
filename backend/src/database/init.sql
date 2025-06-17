@@ -59,6 +59,8 @@ CREATE TABLE IF NOT EXISTS patients (
   ward_id TEXT,
   attending_doctor_id TEXT,
   registration_date TEXT NOT NULL,
+  disease_id TEXT,
   FOREIGN KEY (ward_id) REFERENCES wards(id),
-  FOREIGN KEY (attending_doctor_id) REFERENCES employees(id)
+  FOREIGN KEY (attending_doctor_id) REFERENCES employees(id),
+  FOREIGN KEY (disease_id) REFERENCES diseases(id)
 );

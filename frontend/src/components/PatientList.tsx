@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Patient } from "../types";
 import { patientApi } from "../services/api";
+import { Button } from "./Button";
 
 const PatientList: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -25,14 +26,12 @@ const PatientList: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this patient?")) {
-      try {
-        await patientApi.delete(id);
-        setPatients(patients.filter((p) => p.id !== id));
-      } catch (err) {
-        setError("Failed to delete patient");
-        console.error(err);
-      }
+    try {
+      await patientApi.delete(id);
+      setPatients(patients.filter((p) => p.id !== id));
+    } catch (err) {
+      setError("Failed to delete patient");
+      console.error(err);
     }
   };
 
@@ -40,29 +39,33 @@ const PatientList: React.FC = () => {
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div>
-      <h2>Patients</h2>
+    <div className="blockList">
+      <h2>Пациенты</h2>
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Birth Date</th>
-            <th>Gender</th>
-            <th>Ward</th>
-            <th>Doctor</th>
-            <th>Actions</th>
+            <th>Имя</th>
+            <th>Дата рождения</th>
+            <th>Пол</th>
+            <th>Палата</th>
+            <th>Врач</th>
+            <th>Заболевание</th>
+            <th>Дата регистрации</th>
+            <th>Действия</th>
           </tr>
         </thead>
         <tbody>
           {patients.map((patient) => (
-            <tr key={patient.id}>
+            <tr className="tableRow" key={patient.id}>
               <td>{patient.full_name}</td>
               <td>{patient.birth_date}</td>
               <td>{patient.gender}</td>
               <td>{patient.ward_number}</td>
               <td>{patient.doctor_name}</td>
+              <td>{patient.disease}</td>
+              <td>{patient.registration_date}</td>
               <td>
-                <button onClick={() => handleDelete(patient.id)}>Delete</button>
+                <Button onClick={() => handleDelete(patient.id)}>Delete</Button>
               </td>
             </tr>
           ))}

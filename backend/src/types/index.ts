@@ -48,4 +48,5 @@ export interface Patient {
   ward_id: string;
   attending_doctor_id: string;
   registration_date: string;
+  disease: string;
 }

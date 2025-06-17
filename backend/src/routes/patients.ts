@@ -8,10 +8,11 @@ const db = DatabaseManager.getDatabase();
 // GET all patients with ward and doctor info
 router.get("/", (req, res) => {
   const query = `
-    SELECT p.*, w.number as ward_number, e.full_name as doctor_name
+    SELECT p.*, w.number as ward_number, e.full_name as doctor_name, d.name as disease
     FROM patients p
     LEFT JOIN wards w ON p.ward_id = w.id
     LEFT JOIN employees e ON p.attending_doctor_id = e.id
+    LEFT JOIN diseases d ON p.disease_id = d.id
   `;
 
   db.all(query, (err, rows) => {
@@ -30,6 +31,7 @@ router.get("/:id", (req, res) => {
     FROM patients p
     LEFT JOIN wards w ON p.ward_id = w.id
     LEFT JOIN employees e ON p.attending_doctor_id = e.id
+    LEFT JOIN diseases d ON p.disease_id = d.id
     WHERE p.id = ?
   `;
 
@@ -55,12 +57,13 @@ router.post("/", (req, res) => {
     contact_info,
     ward_id,
     attending_doctor_id,
+    disease_id,
   } = req.body;
   const id = uuidv4();
   const registration_date = new Date().toISOString().split("T")[0];
 
   db.run(
-    "INSERT INTO patients (id, full_name, birth_date, gender, contact_info, ward_id, attending_doctor_id, registration_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO patients (id, full_name, birth_date, gender, contact_info, ward_id, attending_doctor_id, registration_date, disease_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       id,
       full_name,
@@ -70,6 +73,7 @@ router.post("/", (req, res) => {
       ward_id,
       attending_doctor_id,
       registration_date,
+      disease_id,
     ],
     function (err) {
       if (err) {
@@ -85,6 +89,7 @@ router.post("/", (req, res) => {
         ward_id,
         attending_doctor_id,
         registration_date,
+        disease_id,
       });
     }
   );
@@ -99,10 +104,11 @@ router.put("/:id", (req, res) => {
     contact_info,
     ward_id,
     attending_doctor_id,
+    disease_id,
   } = req.body;
 
   db.run(
-    "UPDATE patients SET full_name = ?, birth_date = ?, gender = ?, contact_info = ?, ward_id = ?, attending_doctor_id = ? WHERE id = ?",
+    "UPDATE patients SET full_name = ?, birth_date = ?, gender = ?, contact_info = ?, ward_id = ?, attending_doctor_id = ?, disease_id = ? WHERE id = ?",
     [
       full_name,
       birth_date,
@@ -110,6 +116,7 @@ router.put("/:id", (req, res) => {
       contact_info,
       ward_id,
       attending_doctor_id,
+      disease_id,
       req.params.id,
     ],
     function (err) {
@@ -129,6 +136,7 @@ router.put("/:id", (req, res) => {
         contact_info,
         ward_id,
         attending_doctor_id,
+        disease_id,
       });
     }
   );
