@@ -3,6 +3,8 @@ import { Patient, Ward, Employee } from "../types";
 import { patientApi, wardApi, employeeApi, diseaseApi } from "../services/api";
 import { Button } from "./Button";
 import Modal from "./Modal";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 
 const genderOptions = ["Мужской", "Женский"];
 
@@ -107,6 +109,45 @@ const PatientList: React.FC = () => {
     }
   };
 
+  const handleDownloadCertificate = (patient: Patient) => {
+    const element = document.createElement("div");
+    element.innerHTML = `
+      <div style="padding: 40px;">
+        <h2 style="text-align:center;">МЕДИЦИНСКАЯ СПРАВКА</h2>
+        <p>Дана: <b>${patient.full_name}</b>, ${patient.birth_date} г.р.</p>
+        <p>Палата: <b>${
+          wards.find((w) => w.id === patient.ward_id)?.number || ""
+        }</b></p>
+        <p>Отделение: <b>${
+          wards.find((w) => w.id === patient.ward_id)?.department_name || ""
+        }</b></p>
+        <p>Поступил: <b>${patient.registration_date}</b></p>
+        <p>Диагноз: <b>${
+          diseases.find((d) => d.id === patient.disease_id)?.name || ""
+        }</b></p>
+        <p>Категория заболевания: <b>${
+          diseases.find((d) => d.id === patient.disease_id)?.category_name || ""
+        }</b></p>
+        <p>Сложность: <b>${
+          diseases.find((d) => d.id === patient.disease_id)
+            ?.complexity_description || ""
+        }</b></p>
+        <p>Лечащий врач: <b>${
+          employees.find((e) => e.id === patient.attending_doctor_id)
+            ?.full_name || ""
+        }</b></p>
+        <br/>
+        <p>Пациент находился на лечении в стационаре с <b>${
+          patient.registration_date
+        }</b> по <b>настоящее время</b>.</p>
+        <br/>
+        <p>Дата выдачи: <b>${new Date().toLocaleDateString()}</b></p>
+        <p>Подпись врача: _______________</p>
+      </div>
+    `;
+    html2pdf().from(element).save(`Справка_${patient.full_name}.pdf`);
+  };
+
   if (loading) return <div>Загрузка...</div>;
   if (error) return <div>Ошибка: {error}</div>;
 
@@ -156,6 +197,9 @@ const PatientList: React.FC = () => {
                 </Button>
                 <Button onClick={() => handleDelete(patient.id)}>
                   Удалить
+                </Button>
+                <Button onClick={() => handleDownloadCertificate(patient)}>
+                  Справка
                 </Button>
               </td>
             </tr>
