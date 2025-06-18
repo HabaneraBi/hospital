@@ -1,7 +1,6 @@
 import express from "express";
 import { v4 as uuidv4 } from "uuid";
 import DatabaseManager from "../database/database";
-import { Department } from "../types";
 
 const router = express.Router();
 const db = DatabaseManager.getDatabase();

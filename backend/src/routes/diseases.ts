@@ -1,99 +1,161 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { v4 as uuidv4 } from "uuid";
 import DatabaseManager from "../database/database";
 
 const router = express.Router();
 const db = DatabaseManager.getDatabase();
 
-// GET all diseases with category and complexity names
-router.get("/", (req, res) => {
-  const query = `
-    SELECT dis.*, cat.name as category_name, comp.description as complexity_description
-    FROM diseases dis
-    LEFT JOIN disease_categories cat ON dis.category_id = cat.id
-    LEFT JOIN disease_complexity comp ON dis.complexity_id = comp.id
-  `;
-  db.all(query, (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json(rows);
-  });
-});
-
-// GET disease by ID with category and complexity names
-router.get("/:id", (req, res) => {
-  const query = `
-    SELECT dis.*, cat.name as category_name, comp.description as complexity_description
-    FROM diseases dis
-    LEFT JOIN disease_categories cat ON dis.category_id = cat.id
-    LEFT JOIN disease_complexity comp ON dis.complexity_id = comp.id
-    WHERE dis.id = ?
-  `;
-  db.get(query, [req.params.id], (err, row) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    if (!row) {
-      res.status(404).json({ error: "Disease not found" });
-      return;
-    }
-    res.json(row);
-  });
-});
-
-// POST create disease
-router.post("/", (req, res) => {
-  const { name, category_id, complexity_id } = req.body;
-  const id = uuidv4();
-  db.run(
-    "INSERT INTO diseases (id, name, category_id, complexity_id) VALUES (?, ?, ?, ?)",
-    [id, name, category_id, complexity_id],
-    function (err) {
+// Получить все болезни с категориями и сложностью
+router.get("/", (req: Request, res: Response) => {
+  db.all(
+    `SELECT d.id, d.name, dc.name as category_name, dx.description as complexity_description
+     FROM diseases d
+     LEFT JOIN disease_categories dc ON d.category_id = dc.id
+     LEFT JOIN disease_complexity dx ON d.complexity_id = dx.id`,
+    (err: Error | null, rows: any[]) => {
       if (err) {
         res.status(500).json({ error: err.message });
-        return;
+      } else {
+        res.json(rows);
       }
-      res.status(201).json({ id, name, category_id, complexity_id });
     }
   );
 });
 
-// PUT update disease
-router.put("/:id", (req, res) => {
-  const { name, category_id, complexity_id } = req.body;
-  db.run(
-    "UPDATE diseases SET name = ?, category_id = ?, complexity_id = ? WHERE id = ?",
-    [name, category_id, complexity_id, req.params.id],
-    function (err) {
+// Получить болезнь по id
+router.get("/:id", (req: Request, res: Response) => {
+  const { id } = req.params;
+  db.get(
+    `SELECT d.id, d.name, dc.name as category_name, dx.description as complexity_description
+     FROM diseases d
+     LEFT JOIN disease_categories dc ON d.category_id = dc.id
+     LEFT JOIN disease_complexity dx ON d.complexity_id = dx.id
+     WHERE d.id = ?`,
+    [id],
+    (err: Error | null, row: any) => {
       if (err) {
         res.status(500).json({ error: err.message });
-        return;
+      } else {
+        res.json(row);
       }
-      if (this.changes === 0) {
-        res.status(404).json({ error: "Disease not found" });
-        return;
-      }
-      res.json({ id: req.params.id, name, category_id, complexity_id });
     }
   );
 });
 
-// DELETE disease
-router.delete("/:id", (req, res) => {
-  db.run("DELETE FROM diseases WHERE id = ?", [req.params.id], function (err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
+// Создать болезнь
+router.post("/", (req: Request, res: Response) => {
+  const { name, category_name, complexity_description } = req.body;
+  if (!name || !category_name || !complexity_description) {
+    return res.status(400).json({ error: "Все поля обязательны" });
+  }
+  db.get(
+    `SELECT id FROM disease_categories WHERE name = ?`,
+    [category_name],
+    (err: Error | null, categoryRow: any) => {
+      if (err || !categoryRow) {
+        return res.status(400).json({ error: "Категория не найдена" });
+      }
+      db.get(
+        `SELECT id FROM disease_complexity WHERE description = ?`,
+        [complexity_description],
+        (err2: Error | null, complexityRow: any) => {
+          if (err2 || !complexityRow) {
+            return res.status(400).json({ error: "Сложность не найдена" });
+          }
+          const id = uuidv4();
+          db.run(
+            `INSERT INTO diseases (id, name, category_id, complexity_id) VALUES (?, ?, ?, ?)`,
+            [id, name, categoryRow.id, complexityRow.id],
+            function (err3: Error | null) {
+              if (err3) {
+                return res.status(500).json({ error: err3.message });
+              }
+              db.get(
+                `SELECT d.id, d.name, dc.name as category_name, dx.description as complexity_description
+                 FROM diseases d
+                 LEFT JOIN disease_categories dc ON d.category_id = dc.id
+                 LEFT JOIN disease_complexity dx ON d.complexity_id = dx.id
+                 WHERE d.id = ?`,
+                [id],
+                (err4: Error | null, newRow: any) => {
+                  if (err4) {
+                    return res.status(500).json({ error: err4.message });
+                  }
+                  res.status(201).json(newRow);
+                }
+              );
+            }
+          );
+        }
+      );
     }
-    if (this.changes === 0) {
-      res.status(404).json({ error: "Disease not found" });
-      return;
+  );
+});
+
+// Обновить болезнь
+router.put("/:id", (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, category_name, complexity_description } = req.body;
+  if (!name || !category_name || !complexity_description) {
+    return res.status(400).json({ error: "Все поля обязательны" });
+  }
+  db.get(
+    `SELECT id FROM disease_categories WHERE name = ?`,
+    [category_name],
+    (err: Error | null, categoryRow: any) => {
+      if (err || !categoryRow) {
+        return res.status(400).json({ error: "Категория не найдена" });
+      }
+      db.get(
+        `SELECT id FROM disease_complexity WHERE description = ?`,
+        [complexity_description],
+        (err2: Error | null, complexityRow: any) => {
+          if (err2 || !complexityRow) {
+            return res.status(400).json({ error: "Сложность не найдена" });
+          }
+          db.run(
+            `UPDATE diseases SET name = ?, category_id = ?, complexity_id = ? WHERE id = ?`,
+            [name, categoryRow.id, complexityRow.id, id],
+            function (err3: Error | null) {
+              if (err3) {
+                return res.status(500).json({ error: err3.message });
+              }
+              db.get(
+                `SELECT d.id, d.name, dc.name as category_name, dx.description as complexity_description
+                 FROM diseases d
+                 LEFT JOIN disease_categories dc ON d.category_id = dc.id
+                 LEFT JOIN disease_complexity dx ON d.complexity_id = dx.id
+                 WHERE d.id = ?`,
+                [id],
+                (err4: Error | null, updatedRow: any) => {
+                  if (err4) {
+                    return res.status(500).json({ error: err4.message });
+                  }
+                  res.json(updatedRow);
+                }
+              );
+            }
+          );
+        }
+      );
     }
-    res.json({ message: "Disease deleted successfully" });
-  });
+  );
+});
+
+// Удалить болезнь
+router.delete("/:id", (req: Request, res: Response) => {
+  const { id } = req.params;
+  db.run(
+    `DELETE FROM diseases WHERE id = ?`,
+    [id],
+    function (err: Error | null) {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else {
+        res.json({ success: true });
+      }
+    }
+  );
 });
 
 export default router;

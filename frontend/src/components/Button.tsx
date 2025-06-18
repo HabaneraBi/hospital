@@ -9,7 +9,7 @@ export const Button: FC<PropsWithChildren<ButtonProps>> = ({
   children,
 }) => {
   return (
-    <button className="button" onClick={() => onClick()}>
+    <button type="button" className="button" onClick={() => onClick()}>
       {children}
     </button>
   );

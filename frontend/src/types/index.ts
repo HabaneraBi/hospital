@@ -17,6 +17,7 @@ export interface Patient {
   ward_number?: string;
   doctor_name?: string;
   disease: string;
+  disease_id: string;
 }
 
 export interface Employee {
@@ -27,6 +28,7 @@ export interface Employee {
   contact_info: string;
   education: string;
   specialization: string;
+  department_id: string;
 }
 
 export interface Ward {
@@ -34,6 +36,7 @@ export interface Ward {
   number: string;
   department_name: string;
   bed_count: number;
+  department_id: string;
 }
 
 export interface Disease {
